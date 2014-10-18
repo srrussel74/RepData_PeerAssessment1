@@ -7,7 +7,7 @@ Unzip activity.zip gives activity.csv
 ```r
 data<-read.csv("activity.csv")
 ```
-After reading activity.csv we check dimensions of data. Two months together have 17,568 observals, the intervals of 5 minutes (= 30+31 days\*24 hours\*(60 minutes/5 minutes). There are three variables: total steps, date and interval
+After loading activity.csv we check dimensions of data. There are three variables: steps, date and interval. Total observation of each interval of five minutes during two months is 17,568 (= 30+31 days\*24 hours\*(60 minutes/5 minutes). It is confirmed by:
 
 ```r
 dim(data)
@@ -16,54 +16,147 @@ dim(data)
 ```
 ## [1] 17568     3
 ```
-Let's take a look at first five rows:
+
+data is preprocessing as following:
+There are missing observations. dataN is created from data omitting rows with NA values:
+
 
 ```r
-head(data)
+dataN<-na.omit(data)
 ```
 
-```
-##   steps       date interval
-## 1    NA 2012-10-01        0
-## 2    NA 2012-10-01        5
-## 3    NA 2012-10-01       10
-## 4    NA 2012-10-01       15
-## 5    NA 2012-10-01       20
-## 6    NA 2012-10-01       25
-```
-The column with steps measurements are steps. There are missing observations.
+The column steps from data is stored in object steps. So same way for column interval from data.
+
+The class of column date is converting into class Date before storing into object date:
 
 ```r
-steps<-data$steps
-summary(steps)
+dataN$date<-as.Date(as.character(dataN$date),format="%Y-%m-%d");
+date<-dataN$date
 ```
-
-```
-##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-##     0.0     0.0     0.0    37.4    12.0   806.0    2304
-```
-What is impact of missing data on steps?
-
-```r
-mean(is.na(steps))
-```
-
-```
-## [1] 0.1311
-```
-Approx 13% of data steps is missing. For now these can be ingored
-
 
 
 ## What is mean total number of steps taken per day?
 
+We take steps and groups rows by days. For each group, the steps are to add up by function sum(). So total number of steps per day can be calculate by:
 
+```r
+tpd<-aggregate(steps,list(date),sum)
+```
+
+```r
+sum_steps<-tpd[,2]
+```
+The meaning of variable _tpd_ is total number of steps per day. 
+The result is viewed at the next histogram:
+
+```r
+hist(
+     sum_steps, 
+     xlab="Total number of steps per day",
+     main=""
+     )
+```
+
+![plot of chunk unnamed-chunk-8](./PA1_template_files/figure-html/unnamed-chunk-8.png) 
+
+Average of total number of steps per day is:
+
+```r
+mean(sum_steps)
+```
+
+```
+## [1] 10766
+```
+And median of total number of steps per day is:
+
+```r
+median(sum_steps)
+```
+
+```
+## [1] 10765
+```
 
 ## What is the average daily activity pattern?
 
+The plot of 5 minute interval as variable for x-axis and the average number of steps taken averaged across all days as variable for y-axis firstly needs data created as following:
 
+
+```r
+asi<-aggregate(steps~interval,list(interval),mean)
+```
+Let variable _asi_ be the average of numbers of steps per interval.
+The plot is shown as:
+
+```r
+plot(asi, type='l', ylab="average number of steps", xlab="interval")
+```
+
+![plot of chunk unnamed-chunk-12](./PA1_template_files/figure-html/unnamed-chunk-12.png) 
+
+To find an interval which the number of steps is maximum, we need to create data like last time, but then with function max() instead of mean():
+
+```r
+msi<-aggregate(steps~interval,list(interval),max)
+```
+The variable _msi_ means maximum number of steps per interval. Now the maximum, over all maximum number of steps per interval, which are contained in _msi$steps_, can be found by:
+
+```r
+interval_max_steps<- msi[which.max(msi$steps),1]
+```
+The answer is: interval 615.
 
 ## Imputing missing values
+
+The amount of missing values on data is:
+
+```r
+sum(is.na(data))
+```
+
+```
+## [1] 2304
+```
+
+So the percentage of missing values is 
+
+```r
+percentage<-mean(is.na(data))*100
+```
+approx 4.3716%.
+
+The strategy to insert NA with new values is based on exploraring NA's.
+Let subset NA values from data:
+
+```r
+NAdata<-data[which(is.na(data)),]
+```
+To explore how NA's is spreading, we take a look at _NAdata_. We see there are 8 days where the values are missing:
+
+```r
+unique(NAdata$date)
+```
+
+```
+## [1] 2012-10-01 2012-10-08 2012-11-01 2012-11-04 2012-11-09 2012-11-10
+## [7] 2012-11-14 2012-11-30
+## 61 Levels: 2012-10-01 2012-10-02 2012-10-03 2012-10-04 ... 2012-11-30
+```
+Given that total amount of missing values (2304) divided by 8 (days) resulting to 288, which is total interval per day. So the expectation is that only these whole days have got no values.
+To confirm this for each of this 8 days, we check it by start _i=1_ (2012-10-01)
+
+
+```r
+sum(data$date==NAdata$date[i])
+```
+
+```
+## [1] 288
+```
+Repeat the confirmation for each day from _NAdata$date_ (_i=2:8_) shows same result given by 288.
+
+In fact we have to insert value per given days
 
 
 

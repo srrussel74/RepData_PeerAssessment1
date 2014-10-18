@@ -11,36 +11,112 @@ Unzip activity.zip gives activity.csv
 ```{r}
 data<-read.csv("activity.csv")
 ```
-After reading activity.csv we check dimensions of data. Two months together have 17,568 observals, the intervals of 5 minutes (= 30+31 days\*24 hours\*(60 minutes/5 minutes). There are three variables: total steps, date and interval
+After loading activity.csv we check dimensions of data. There are three variables: steps, date and interval. Total observation of each interval of five minutes during two months is 17,568 (= 30+31 days\*24 hours\*(60 minutes/5 minutes). It is confirmed by:
 ```{r}
 dim(data)
 ```
-Let's take a look at first five rows:
-```{r}
-head(data)
-```
-The column with steps measurements are steps. There are missing observations.
-```{r}
-steps<-data$steps
-summary(steps)
-```
-What is impact of missing data on steps?
-```{r}
-mean(is.na(steps))
-```
-Approx 13% of data steps is missing. For now these can be ingored
 
+data is preprocessing as following:
+There are missing observations. dataN is created from data omitting rows with NA values:
+
+```{r}
+dataN<-na.omit(data)
+```
+
+The column steps from data is stored in object steps. So same way for column interval from data.
+```{r, echo=FALSE}
+steps<-dataN$steps
+interval<-dataN$interval
+```
+The class of column date is converting into class Date before storing into object date:
+```{r}
+dataN$date<-as.Date(as.character(dataN$date),format="%Y-%m-%d");
+date<-dataN$date
+```
 
 
 ## What is mean total number of steps taken per day?
 
+We take steps and groups rows by days. For each group, the steps are to add up by function sum(). So total number of steps per day can be calculate by:
+```{r}
+tpd<-aggregate(steps,list(date),sum)
+```
+```{r}
+sum_steps<-tpd[,2]
+```
+The meaning of variable _tpd_ is total number of steps per day. 
+The result is viewed at the next histogram:
+```{r}
+hist(
+     sum_steps, 
+     xlab="Total number of steps per day",
+     main=""
+     )
+```
 
+Average of total number of steps per day is:
+```{r}
+mean(sum_steps)
+```
+And median of total number of steps per day is:
+```{r}
+median(sum_steps)
+```
 
 ## What is the average daily activity pattern?
 
+The plot of 5 minute interval as variable for x-axis and the average number of steps taken averaged across all days as variable for y-axis firstly needs data created as following:
 
+```{r}
+asi<-aggregate(steps~interval,list(interval),mean)
+```
+Let variable _asi_ be the average of numbers of steps per interval.
+The plot is shown as:
+```{r}
+plot(asi, type='l', ylab="average number of steps", xlab="interval")
+```
+
+To find an interval which the number of steps is maximum, we need to create data like last time, but then with function max() instead of mean():
+```{r}
+msi<-aggregate(steps~interval,list(interval),max)
+```
+The variable _msi_ means maximum number of steps per interval. Now the maximum, over all maximum number of steps per interval, which are contained in _msi$steps_, can be found by:
+```{r}
+interval_max_steps<- msi[which.max(msi$steps),1]
+```
+The answer is: interval `r interval_max_steps`.
 
 ## Imputing missing values
+
+The amount of missing values on data is:
+```{r}
+sum(is.na(data))
+```
+
+So the percentage of missing values is 
+```{r}
+percentage<-mean(is.na(data))*100
+```
+approx `r percentage `%.
+
+The strategy to insert NA with new values is based on exploraring NA's.
+Let subset NA values from data:
+```{r}
+NAdata<-data[which(is.na(data)),]
+```
+To explore how NA's is spreading, we take a look at _NAdata_. We see there are 8 days where the values are missing:
+```{r}
+unique(NAdata$date)
+```
+Given that total amount of missing values (`r sum(is.na(data))`) divided by `r length(unique(NAdata$date))` (days) resulting to 288, which is total interval per day. So the expectation is that only these whole days have got no values.
+To confirm this for each of this 8 days, we check it by start _i=1_`r i<-1` (="`r NAdata$date[i]`"):
+
+```{r}
+sum(data$date==NAdata$date[i])
+```
+Repeat the confirmation for each day from _NAdata$date_ (_i=2:8_) shows same result given as 288.
+
+In fact we have to insert value per given days
 
 
 
