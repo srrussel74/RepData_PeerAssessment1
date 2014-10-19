@@ -56,7 +56,8 @@ hist(
      sumsteps, 
      xlab="Total number of steps per day",
      main="",
-     breaks=10
+     breaks=10,
+     col=rgb(1,0,0,0.7)
      )
 ```
 
